@@ -49,7 +49,7 @@ export class ComputeFieldDirective implements OnInit, OnDestroy {
       });
     this.control.statusChanges.subscribe(x => {
       console.log(x);
-    })
+    });
   }
 
   ngOnDestroy() {

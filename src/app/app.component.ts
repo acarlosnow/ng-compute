@@ -52,7 +52,11 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.computeService.listen().subscribe((x) => {
-      console.log(x);
+      console.log('first');
+      this.form.patchValue(x, {emitEvent: false});
+    });
+    this.computeService.listen().subscribe((x) => {
+      console.log('asdasd');
       this.form.patchValue(x, {emitEvent: false});
     });
   }

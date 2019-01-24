@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
-import { tap, concatMap, filter, map, share, delay } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
+import { tap, concatMap, filter, map, delay } from 'rxjs/operators';
 
 export interface DealModel {
   tax?: number;
@@ -31,9 +30,46 @@ export interface ComputeOptions {
 })
 export class ComputeService {
   private queue$ = new Subject<ComputeOptions>();
+  private queueFinished$ = new Subject<DealModel>();
   private pendingCompute = 0;
-  private hasFocusedComputeField = false;
-  constructor(private http: HttpClient) {}
+
+  constructor() {
+    this.queue$
+      .asObservable()
+      .pipe(
+        tap(() => {
+          this.pendingCompute++;
+          console.warn('queued compute...', this.pendingCompute);
+        }),
+        concatMap(request => {
+          const formObj: DealModel = {
+            tax: 10,
+            price: 20
+          };
+          request.beforeComputeCallback(formObj);
+          console.log('prepare compute', formObj);
+          return of(true).pipe(
+            delay(1000),
+            map(() => {
+              return <DealModel>{
+                tax: generateRandomNumber(0, 100),
+                price: generateRandomNumber(300, 1000)
+              };
+            }),
+            tap(() => {
+              console.warn('resolved compute', this.pendingCompute);
+            })
+          );
+        }),
+        tap(() => {
+          this.pendingCompute--;
+        }),
+        filter(() => this.pendingCompute === 0)
+      )
+      .subscribe(x => {
+        this.queueFinished$.next(x);
+      });
+  }
 
   public compute(options: ComputeOptions): void {
     if (!options) {
@@ -43,41 +79,8 @@ export class ComputeService {
     this.queue$.next(options);
   }
 
-  public lock() {}
-
   public listen(): Observable<DealModel> {
-    return this.queue$.pipe(
-      tap(() => {
-        this.pendingCompute++;
-        console.warn('queued compute...', this.pendingCompute);
-      }),
-      concatMap(request => {
-        const formObj: DealModel = {
-          tax: 10,
-          price: 20
-        };
-        request.beforeComputeCallback(formObj);
-        console.log('prepare compute', formObj);
-        return of(true).pipe(
-          delay(1000),
-          map((x: any) => {
-            const [first] = x;
-            return {
-              tax: generateRandomNumber(0, 100),
-              price: generateRandomNumber(300, 1000)
-            };
-          }),
-          tap(() => {
-            console.warn('resolved compute', this.pendingCompute);
-          }),
-        );
-      }),
-      tap(() => {
-        this.pendingCompute--;
-      }),
-      filter(() => this.pendingCompute === 0),
-      share()
-    );
+    return this.queueFinished$.asObservable();
   }
 }
 
