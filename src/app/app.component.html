@@ -3,22 +3,40 @@
   <div class="row">
     <div class="col-4">
       <form [formGroup]="form">
-        <div class="row align-items-center">
-          <div class="col-2">
+        <div class="row align-items-center mb-2">
+          <div class="col-4">
             <label class="mb-0" for="price">Price</label>
           </div>
           <div class="col">
             <input [appComputeField]="priceComputeOptions" type="text" formControlName="price" class="form-control">
           </div>
         </div>
-        <div class="row align-items-center">
-          <div class="col-2">
+        <div class="row align-items-center mb-2">
+          <div class="col-4">
             <label class="mb-0" for="price">Tax</label>
           </div>
           <div class="col">
             <input [appComputeField]="taxComputeOptions" type="text" formControlName="tax" class="form-control">
           </div>
         </div>
+        <ng-container formGroupName="gross">
+          <div class="row align-items-center mb-2">
+            <div class="col-4">
+              <label class="mb-0" for="price">Front Gross</label>
+            </div>
+            <div class="col">
+              <input [appComputeField]="frontGrossComputeOptions" type="text" formControlName="frontGross" class="form-control">
+            </div>
+          </div>
+          <div class="row align-items-center mb-2">
+            <div class="col-4">
+              <label class="mb-0" for="price">Back Gross</label>
+            </div>
+            <div class="col">
+              <input [appComputeField]="backGrossComputeOptions" type="text" formControlName="backGross" class="form-control">
+            </div>
+          </div>
+        </ng-container>
       </form>
     </div>
     <div class="col">
@@ -26,15 +44,13 @@
       <code>
         {{ form?.value | json }}
       </code>
-      <label for="">Compute</label>
-      <code>
-        {{ data$ | async | json }}
-      </code>
       <div>
-        <label for="">REsponse</label>
-        <div>
-          <pre>{{ list$ | async | json }}</pre>
-        </div>
+        <label for="">Responses</label>
+        <code>
+          <pre>
+              {{ list$ | async | json }}
+          </pre>
+        </code>
       </div>
     </div>
   </div>

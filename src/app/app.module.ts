@@ -4,17 +4,17 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { AppComponent } from './app.component';
-import { ComputeFieldDirective } from './compute-field.directive';
+import { ComputeModule } from './compute';
 
 @NgModule({
   declarations: [
-    AppComponent,
-    ComputeFieldDirective
+    AppComponent
   ],
   imports: [
     BrowserModule,
     ReactiveFormsModule,
-    HttpClientModule
+    HttpClientModule,
+    ComputeModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]
