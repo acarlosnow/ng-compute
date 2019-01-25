@@ -44,6 +44,7 @@ export class AppComponent implements OnInit {
   frontGrossComputeOptions: ComputeFieldOptions<DealModel> = {
     computeProperty: ComputeProperty.FrontGross,
     valueMapping: (val, deal) => {
+      deal.gross = deal.gross || {};
       deal.gross.frontGross = val;
     }
   };
@@ -51,6 +52,7 @@ export class AppComponent implements OnInit {
   backGrossComputeOptions: ComputeFieldOptions<DealModel> = {
     computeProperty: ComputeProperty.BackGross,
     valueMapping: (val, deal) => {
+      deal.gross = deal.gross || {};
       deal.gross.backGross = val;
     }
   };

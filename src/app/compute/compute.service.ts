@@ -15,10 +15,9 @@ export class ComputeService<T = any> {
    * Private property
    */
   private computeQueue$ = new Subject<ComputeOptions>();
+  private computeQueueFinished$ = new Subject<T>();
   private computedResult$ = new Subject<T>();
   private currentFieldChange: ComputeFieldChange = null;
-  private queueFinished$ = new Subject<T>();
-  private pendingCompute = 0;
   private data: T = null;
 
   /*******************
@@ -32,24 +31,26 @@ export class ComputeService<T = any> {
    * Private methods
    */
   private listenForComputes() {
+    let pendingCompute = 0;
     this.computeQueue$
       .asObservable()
       .pipe(
         tap(() => {
-          this.pendingCompute++;
+          pendingCompute++;
         }),
-        concatMap(request => {
+        concatMap((request): Observable<T> => {
           const formObj: any = { ...this.data };
           request.valueMapping(formObj);
           console.warn('compute request: ', JSON.stringify(formObj));
 
           // todo(allan): remove sample request
           return of(true).pipe(
-            delay(800),
+            delay(300),
             map(() => {
               formObj.gross = formObj.gross || {};
               switch (request.computeProperty) {
                 case ComputeProperty.Tax: {
+                  formObj.tax = generateRandomNumber(300, 1000);
                   formObj.price = generateRandomNumber(300, 1000);
                   formObj.gross.frontGross = generateRandomNumber(300, 1000);
                   formObj.gross.backGross = generateRandomNumber(300, 1000);
@@ -84,17 +85,22 @@ export class ComputeService<T = any> {
           );
         }),
         tap(() => {
-          this.pendingCompute--;
+          pendingCompute--;
         }),
-        filter(() => this.pendingCompute === 0)
+        filter(() => pendingCompute === 0)
       )
-      .subscribe(x => {
+      .subscribe(computedValue => {
+        // if compute has finish while user is changing another field
+        // then we will revert back the property on the object base
+        // on what the user has inputted currently so user will not experience
+        // changing of values while he is typing.
         const computeField = this.currentFieldChange;
-        // todo: mapping back last field that change
         if (computeField) {
-          computeField.valueMapping(computeField.value, x);
+          computeField.valueMapping(computeField.value, computedValue);
         }
-        this.queueFinished$.next(x);
+
+        // emit event that the compute has finished all the items in the queue.
+        this.computeQueueFinished$.next(computedValue);
       });
   }
 
@@ -114,7 +120,7 @@ export class ComputeService<T = any> {
   }
 
   public computed(): Observable<T> {
-    return this.queueFinished$.asObservable();
+    return this.computeQueueFinished$.asObservable();
   }
 
   public computedResult(): Observable<T> {
