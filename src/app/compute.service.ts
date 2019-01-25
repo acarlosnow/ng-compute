@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, Subject, of, BehaviorSubject } from 'rxjs';
 import { tap, concatMap, filter, map, delay } from 'rxjs/operators';
+import { NgControl } from '@angular/forms';
 
 export interface DealModel {
   tax?: number;
@@ -30,34 +31,38 @@ export interface ComputeOptions {
 })
 export class ComputeService {
   private queue$ = new Subject<ComputeOptions>();
+  private computeFieldChanges$ = new BehaviorSubject<{
+    value: any;
+    field: NgControl;
+  }>(null);
   private queueFinished$ = new Subject<DealModel>();
   private pendingCompute = 0;
-
+  private data: DealModel = null;
   constructor() {
     this.queue$
       .asObservable()
       .pipe(
         tap(() => {
           this.pendingCompute++;
-          console.warn('queued compute...', this.pendingCompute);
         }),
         concatMap(request => {
-          const formObj: DealModel = {
-            tax: 10,
-            price: 20
-          };
+          const formObj: DealModel = {...this.data};
           request.beforeComputeCallback(formObj);
-          console.log('prepare compute', formObj);
+          console.warn('compute request: ', JSON.stringify(formObj));
           return of(true).pipe(
             delay(1000),
             map(() => {
-              return <DealModel>{
-                tax: generateRandomNumber(0, 100),
-                price: generateRandomNumber(300, 1000)
-              };
+              if (request.computeProperty === ComputeProperty.Tax) {
+                formObj.price = generateRandomNumber(300, 1000);
+              }
+              if (request.computeProperty === ComputeProperty.Price) {
+                formObj.tax = generateRandomNumber(0, 100);
+              }
+              this.data = formObj;
+              return formObj;
             }),
-            tap(() => {
-              console.warn('resolved compute', this.pendingCompute);
+            tap(x => {
+              console.warn('compute result: ', JSON.stringify(x));
             })
           );
         }),
@@ -67,6 +72,11 @@ export class ComputeService {
         filter(() => this.pendingCompute === 0)
       )
       .subscribe(x => {
+        const computeField = this.computeFieldChanges$.value;
+        // todo: mapping back last field that change
+        if (computeField) {
+          x[computeField.field.name] = computeField.value;
+        }
         this.queueFinished$.next(x);
       });
   }
@@ -77,6 +87,10 @@ export class ComputeService {
     }
 
     this.queue$.next(options);
+  }
+
+  public computeFieldChanges(value: any, field: NgControl) {
+    this.computeFieldChanges$.next({ value, field: field });
   }
 
   public listen(): Observable<DealModel> {

@@ -6,8 +6,8 @@ import {
   ComputeProperty,
   ComputeScenario
 } from './compute.service';
-import { distinctUntilChanged, debounceTime, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { distinctUntilChanged, debounceTime, takeUntil, tap } from 'rxjs/operators';
+import { Subject, combineLatest } from 'rxjs';
 
 export interface ComputeFieldOptions {
   computeProperty?: ComputeProperty;
@@ -33,6 +33,7 @@ export class ComputeFieldDirective implements OnInit, OnDestroy {
   ngOnInit() {
     this.control.valueChanges
       .pipe(
+        tap((value) => this.computeService.computeFieldChanges(parseFloat(value), this.control)),
         debounceTime(400),
         distinctUntilChanged(),
         takeUntil(this.destroyed$)
@@ -47,9 +48,6 @@ export class ComputeFieldDirective implements OnInit, OnDestroy {
           computescenario: ops.computescenario
         });
       });
-    this.control.statusChanges.subscribe(x => {
-      console.log(x);
-    });
   }
 
   ngOnDestroy() {

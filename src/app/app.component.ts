@@ -28,7 +28,7 @@ export class AppComponent implements OnInit {
   form = this.formBuilder.group({
     price: [0],
     tax: [0]
-  }, {updateOn: 'blur'});
+  });
 
   taxComputeOptions: ComputeFieldOptions = {
     computeProperty: ComputeProperty.Tax,
@@ -53,10 +53,6 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.computeService.listen().subscribe((x) => {
       console.log('first');
-      this.form.patchValue(x, {emitEvent: false});
-    });
-    this.computeService.listen().subscribe((x) => {
-      console.log('asdasd');
       this.form.patchValue(x, {emitEvent: false});
     });
   }
